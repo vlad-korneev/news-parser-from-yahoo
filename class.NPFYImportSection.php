@@ -123,7 +123,7 @@ class NPFYImportSection {
 				'post_status' => 'publish',
 			);
 			$result                                                 = wp_get_recent_posts( $args );
-			$this->arr_post_type[ $post_type ]['date_of_last_post'] = ! empty( $result[0] ) ? strtotime( $result[0]['post_date'] ) : false;
+			$this->arr_post_type[ $post_type ]['date_of_last_post'] = ! empty( $result[0] ) ? strtotime( $result[0]['post_date_gmt'] ) : 0;
 		}
 	}
 
@@ -145,8 +145,8 @@ class NPFYImportSection {
 			$items_rss   = new SimpleXmlElement( $content_rss );
 			if ( ! empty( $items_rss->channel->item ) ) {
 				foreach ( $items_rss->channel->item as $item_rss ) {
-					if ( strtotime( $item_rss->pubDate ) > $param['date_of_last_post'] ) {
-						array_push( $this->new_posts[ $post_type ], $item_rss );
+					if ( strtotime($item_rss->pubDate) > $param['date_of_last_post'] ) {
+						array_unshift( $this->new_posts[ $post_type ], $item_rss );
 					}
 				}
 			}
@@ -171,10 +171,17 @@ class NPFYImportSection {
 				$images   = array();
 				$desc_str = ! empty( $item->description ) ? $item->description : '';
 
+				date_default_timezone_set('UTC');
+				$pubDate_g = gmdate("Y-m-d H:i:s", strtotime($item->pubDate));
+				date_default_timezone_set('Europe/Kiev');
+				$pubDate = date("Y-m-d H:i:s", strtotime($item->pubDate));
+
 				$post_data = array(
 					'post_title'   => $item->title,
 					'post_content' => $desc_str,
 					'post_status'  => 'publish',
+					'post_date'    => $pubDate,
+					'post_date_gmt'=> $pubDate_g,
 					'post_author'  => 1,
 					'post_type'    => $post_type
 				);
